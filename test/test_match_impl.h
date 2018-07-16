@@ -2,11 +2,18 @@
 
 #include "glob/match.h"
 
+// IMPLNAME has been defined to be the test
+// category and namespace with match implementation.
+
+#ifndef IMPLNAME
+#error "IMPLNAME must be defined"
+#endif
+
 // Simple backtracking matchers.
 
-using hf::basic_backtrack::match;
+using hf::IMPLNAME::match;
 
-TEST(basic_backtrack, literal) {
+TEST(IMPLNAME, literal) {
     EXPECT_TRUE(match("", ""));
     EXPECT_TRUE(match("abcd", "abcd"));
 
@@ -18,7 +25,7 @@ TEST(basic_backtrack, literal) {
     EXPECT_FALSE(match("abcd", "abc"));
 }
 
-TEST(basic_backtrack, query) {
+TEST(IMPLNAME, query) {
     EXPECT_FALSE(match("?", ""));
     EXPECT_TRUE(match("?", "a"));
     EXPECT_FALSE(match("?", "ab"));
@@ -34,7 +41,7 @@ TEST(basic_backtrack, query) {
     EXPECT_FALSE(match("a??b", "ccab"));
 }
 
-TEST(basic_backtrack, star) {
+TEST(IMPLNAME, star) {
     EXPECT_TRUE(match("*", ""));
     EXPECT_TRUE(match("*", "a"));
     EXPECT_TRUE(match("*", "abc"));
@@ -55,7 +62,7 @@ TEST(basic_backtrack, star) {
     EXPECT_FALSE(match("a*b", "acbc"));
 }
 
-TEST(basic_backtrack, escape) {
+TEST(IMPLNAME, escape) {
     EXPECT_TRUE(match("a\\?b", "a?b"));
     EXPECT_TRUE(match("a\\?*\\*b", "a?*b"));
     EXPECT_TRUE(match("a\\?*\\*b", "a?xx*b"));
@@ -70,7 +77,7 @@ TEST(basic_backtrack, escape) {
     EXPECT_TRUE(match("\\", ""));
 }
 
-TEST(basic_backtrack, combined) {
+TEST(IMPLNAME, combined) {
     EXPECT_TRUE(match("***", ""));
     EXPECT_TRUE(match("***", "a"));
     EXPECT_TRUE(match("***", "abc"));
@@ -86,12 +93,16 @@ TEST(basic_backtrack, combined) {
     EXPECT_FALSE(match("*x.???", "fox.1234"));
 }
 
-TEST(match, long_no_match) {
-    // Works, but exponentially slow in n owing to backtracking.
-    int n = 14;
-    std::string stars(n, '*');
-    std::string exes(n, 'x');
-    EXPECT_FALSE(match((stars+"_").c_str(),  exes.c_str()));
+TEST(IMPLNAME, long_no_match) {
+    // Works, but exponentially slow in n with backtracking.
+    int n = 13;
+
+    std::string exes(2*n, 'x');
+    std::string pat(2*n, '*');
+    for (unsigned i = 0; i<n; ++i) pat[2*i+1] = 'x';
+    pat += '_';
+
+    EXPECT_FALSE(match(pat.c_str(),  exes.c_str()));
 }
 
 

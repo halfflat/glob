@@ -8,7 +8,7 @@ all:: unit libglob.a
 glob-src:=match.cc
 glob-obj:=$(patsubst %.cc, %.o, $(glob-src))
 
-test-src:=unit.cc test_basic_backtrack.cc
+test-src:=unit.cc test_match_backtrack.cc test_match_nfa.cc
 test-obj:=$(patsubst %.cc, %.o, $(test-src))
 
 gtest-top:=$(top)test/googletest/googletest
@@ -23,6 +23,7 @@ vpath %.cc $(top)test
 OPTFLAGS?=-O3 -march=native
 CXXFLAGS+=$(OPTFLAGS) -MMD -MP -std=c++14 -g -pthread
 CPPFLAGS+=-isystem $(gtest-inc) -I $(top)
+ARFLAGS+=-U
 
 -include $(depends)
 

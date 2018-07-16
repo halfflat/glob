@@ -6,7 +6,11 @@ namespace hf {
 
 // Simple backtracking implementation:
 
-namespace basic_backtrack {
+namespace backtrack {
+    bool match(const char* pattern, const char* text);
+}
+
+namespace nfa {
     bool match(const char* pattern, const char* text);
 }
 
