@@ -7,16 +7,58 @@ using std::puts;
 
 #include "match.h"
 
-// Simple back-tracking matcher.
-//
 // Metacharacters:
 //     ?     Match any one character.
 //     *     Match any string of characters.
 //     \     Match against the next pattern character literally.
+//     [     Begin character class.
+//     ]     End character class.
+//
+// A character class matches exactly one character of those
+// listed between the [ and ] characters.
 
 namespace hf {
 
 namespace backtrack {
+
+bool match_char_class(const char*& p, char c) {
+    // Special cases for first character:
+    // ! => negate test defined from following char.
+    // - => treat '-' as literal.
+    // ] => treat ']' as literal.
+
+    if (*p!='[') return false;
+    ++p;
+
+    bool negate = false;
+    bool match = false;
+
+    if (*p=='!') {
+        negate = true;
+        ++p;
+    }
+
+    bool first = true;
+    char lrange = 0;
+    for (; !match && *p && (first || *p!=']'); ++p) {
+
+        bool last = *p && p[1]==']';
+        if (*p=='-' && lrange && !first && !last) {
+            match = c>=lrange && c<=*++p;
+            lrange = 0;
+            continue;
+        }
+
+        lrange = c;
+        match = c==*p;
+        first = false;
+    }
+
+    while (*p && *p!=']') ++p;
+    if (!*p) return false;
+
+    return match^negate;
+}
 
 bool match(const char* p, const char* t) {
     for (; ; ++p, ++t) {
@@ -26,6 +68,10 @@ bool match(const char* p, const char* t) {
             else break;
         case '*':
             return match(p+1, t) || *t && match(p, t+1);
+        case '[':
+            if (!*t) return false;
+            else if (!match_char_class(p, *t)) return false;
+            else continue;
         case '\\':
             ++p; // fall-through
         default:
@@ -35,7 +81,7 @@ bool match(const char* p, const char* t) {
     }
 }
 
-} // namespace basic_backtrack
+} // namespace backtrack
 
 namespace nfa {
 

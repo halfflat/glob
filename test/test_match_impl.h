@@ -93,6 +93,14 @@ TEST(IMPLNAME, combined) {
     EXPECT_FALSE(match("*x.???", "fox.1234"));
 }
 
+TEST(IMPLNAME, charclass_basic) {
+    EXPECT_TRUE(match("a[bcd]e", "abe"));
+    EXPECT_TRUE(match("a[bcd]e", "ace"));
+    EXPECT_TRUE(match("a[bcd]e", "ade"));
+    EXPECT_FALSE(match("a[bcd]e", "aae"));
+    EXPECT_FALSE(match("a[bcd]e", "aee"));
+}
+
 TEST(IMPLNAME, long_no_match) {
     // Works, but exponentially slow in n with backtracking.
     int n = 13;
