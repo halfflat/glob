@@ -5,7 +5,7 @@ top:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
 all:: unit libglob.a
 
-glob-src:=match.cc
+glob-src:=match.cc runglob.cc
 glob-obj:=$(patsubst %.cc, %.o, $(glob-src))
 
 test-src:=unit.cc test_match_backtrack.cc test_match_nfa.cc
@@ -21,8 +21,9 @@ vpath %.cc $(top)glob
 vpath %.cc $(top)test
 
 OPTFLAGS?=-O3 -march=native
-CXXFLAGS+=$(OPTFLAGS) -MMD -MP -std=c++14 -g -pthread
+CXXFLAGS+=$(OPTFLAGS) -MMD -MP -std=c++17 -g -pthread
 CPPFLAGS+=-isystem $(gtest-inc) -I $(top)
+LDLIBS+=-lstdc++fs
 ARFLAGS+=-U
 
 -include $(depends)

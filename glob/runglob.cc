@@ -1,25 +1,25 @@
-#include <vector>
 #include <filesystem>
+#include <string>
+#include <vector>
 
 #include "match.h"
+#include "runglob.h"
 
-struct pattern_component {
-    const char* p = nullptr;
-    bool literal = false;
-};
+namespace hf {
 
-// Return first component, writing NUL at end.
-// Update pattern to one-past-the-end of component,
-// or nullptr if last component.
+// Return first component, overwriting delimitter with NUL.
+// Set pattern to beginning of next path component, skipping delimiters.
 
 pattern_component tokenize(char*& pattern) {
-    pattern_component k = {pattern, false};
+    if (!*pattern) return {pattern, true, false};
 
-    char* s = nullptr; // end of literal component, nullptr => none
+    char* s = nullptr;
     char* p = pattern;
     bool meta = false;
 
     do {
+        while (*p=='/') ++p;
+
         bool in_charclass = false;
         bool escape = false;
         for (;*p && *p!='/'; ++p) {
@@ -36,64 +36,107 @@ pattern_component tokenize(char*& pattern) {
             case '?':
                 if (!escape) meta = true;
                 break;
-            case '\':
+            case '\\':
                 if (!escape && !in_charclass) escape = true;
                 break;
             case ']':
-                if (in_charclass) in_chaclass = false;
+                if (in_charclass) in_charclass = false;
                 break;
             default: ;
             }
         }
         if (!meta) s = p;
-        if (*p) ++p;
     } while (!meta && *p);
 
-    if (s) k.literal = true;
-    else s = p;
+    pattern_component k = { pattern };
+    k.literal = (bool)s;
 
-    pattern = *s? s+1: nullptr;
+    if (!s) s = p;
+    k.directory = !*s;
+
+    pattern = s;
+    while (*pattern=='/') ++pattern;
+
     *s = 0;
     return k;
 }
 
-std::vector<std::filesystem::path> glob(std::string pattern) {
-    namespace fs = std::filesystem;
-    constexpr auto diropts = fs::directory_options::follow_directory_symlink
-                           | fs::directory_options::skip_permission_denied;
+// let's just use std::filesystem for C++17 ...
 
-    char* c = pattern.data();
-    if (!*c) return {};
+namespace fs = std::filesystem;
 
-    std::vector<fs::path> paths(1), new_paths;
-    if (c[0]=='/') {
-        paths[0]="/";
-        ++c;
+struct posix_impl {
+    static constexpr auto diropts = fs::directory_options::follow_directory_symlink
+                                  | fs::directory_options::skip_permission_denied;
+
+    bool is_directory(const char* path) const {
+        return fs::is_directory(path);
     }
+
+    bool exists(const char* path) const {
+        return fs::exists(path);
+    }
+
+    void for_each_directory(const char* path, glob_fs_provider::action_type action) const {
+        for (const auto& p: fs::directory_iterator(path, diropts)) {
+            std::error_code ec;
+            if (p.is_directory(&ec)) action(p.path().c_str());
+        }
+    }
+
+    void for_each_entry(const char* path, glob_fs_provider::action_type action) const {
+        for (const auto& p: fs::directory_iterator(path, diropts)) {
+            std::error_code ec;
+            action(p.path().c_str());
+        }
+    }
+} posix_impl_;
+
+glob_fs_provider glob_posix_provider{posix_impl_};
+
+void glob(const char* pattern, std::function<void (const char*)> callback, glob_fs_provider fs) {
+    char* c = pattern;
+    if (!*c) return;
+
+    std::vector<std::string> paths, new_paths;
+    paths.push_back("");
 
     do {
         pattern_component component = tokenize(c);
-        auto add_conditionally = [&new_path, dir = !c](const fs::path& p) {
-            if (dir? fs::is_directory(p): fs::exists(p)) new_path.push_back(p);
-        };
 
         if (component.literal) {
-            fs::path suffix(component.pattern);
-            for (auto p: paths) add_conditionally(p/suffix);
+            for (auto p: paths) {
+                p += '/';
+                p += component.pattern;
+
+                if (component.directory) {
+                    if (fs.is_directory(p.c_str())) new_paths.push_back(std::move(p));
+                }
+                else {
+                    if (fs.exists(p.c_str())) new_paths.push_back(std::move(p));
+                }
+            }
         }
         else {
-            for (const auto& prefix: paths) {
-                for (const auto& suffix: fs::directory_iterator(p, dirops)) {
-                    auto path = prefix/suffix;
-                    if (nfa::match(component.pattern, path.c_str())) add_conditionally(path);
-                }
+            auto push_if_match = [&new_paths, const char* pattern = component.pattern](const char* x) {
+                const char* tail = std:strrchr(x, '/');
+                if (!tail) tail = x;
+                if (nfa::match(.pattern, tail)) new_paths.push_back(x);
+            };
+
+            for (auto p: paths) {
+                if (component.directory) fs.for_each_directory(p.c_str(), push_if_match);
+                else fs.for_each_entry(p.c_str(), push_if_match);
             }
         }
 
         std::swap(paths, new_paths);
         new_paths.clear();
-    } while (c);
+    } while (*c);
 
-    return paths;
+    for (auto& p: paths) {
+        callback(p.c_str());
+    }
 }
 
+}
