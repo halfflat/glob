@@ -6,8 +6,11 @@
 
 #include "glob/runglob.h"
 
+namespace hf {
 
 struct mock_fs_provider {
+    using action_type = glob_fs_provider::action_type;
+
     std::unordered_multimap<std::string, std::string> tree;
 
     void add_path(const char* name) {
@@ -59,6 +62,8 @@ struct mock_fs_provider {
         }
     }
 };
+
+}
 
 TEST(glob, todo) {
 

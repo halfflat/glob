@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 
 namespace hf {
@@ -16,11 +17,6 @@ struct pattern_component {
 
 pattern_component tokenize(char*& pattern);
 
-bool path_is_directory(const std::filesystem::path& p) {
-    return p.empty() || std::prev(p.end())->empty();
-
-}
-
 // Abstract of filesystem i/face for mocking/testing.
 // (Assuming everything we need can be represented by
 // narrow C strings.)
@@ -31,17 +27,19 @@ struct glob_fs_provider {
     template <typename Impl>
     glob_fs_provider(Impl impl): inner_(new wrap<Impl>(std::move(impl))) {}
 
+    glob_fs_provider(const glob_fs_provider& x): inner_(x.inner_->clone()) {}
+
     bool is_directory(const char* path) const {
-        return inner->is_directory(path);
+        return inner_->is_directory(path);
     }
     bool exists(const char* path) const {
-        return inner->exists(path);
+        return inner_->exists(path);
     }
     void for_each_directory(const char* path, action_type action) const {
-        inner->for_each_directory(path, action);
+        inner_->for_each_directory(path, action);
     }
     void for_each_entry(const char* path, action_type action) const {
-        inner->for_each_entry(path, action);
+        inner_->for_each_entry(path, action);
     }
 
 private:
@@ -50,6 +48,7 @@ private:
         virtual bool exists(const char* path) const = 0;
         virtual void for_each_directory(const char* path, action_type action) const = 0;
         virtual void for_each_entry(const char* path, action_type action) const = 0;
+        virtual base* clone() const = 0;
     };
 
     template <typename Impl>
@@ -57,16 +56,19 @@ private:
         wrap(Impl impl): impl_(std::move(impl)) {}
 
         bool is_directory(const char* path) const override {
-            return impl.is_directory(path);
+            return impl_.is_directory(path);
         }
         bool exists(const char* path) const override {
-            return impl.exists(path);
+            return impl_.exists(path);
         }
         void for_each_directory(const char* path, action_type action) const override {
-            impl.for_each_directory(path, action);
+            impl_.for_each_directory(path, action);
         }
         void for_each_entry(const char* path, action_type action) const override {
-            impl.for_each_entry(path, action);
+            impl_.for_each_entry(path, action);
+        }
+        base* clone() const override {
+            return new wrap(impl_);
         }
 
         Impl impl_;

@@ -8,7 +8,7 @@ all:: unit libglob.a
 glob-src:=match.cc runglob.cc
 glob-obj:=$(patsubst %.cc, %.o, $(glob-src))
 
-test-src:=unit.cc test_match_backtrack.cc test_match_nfa.cc
+test-src:=unit.cc test_match_backtrack.cc test_match_nfa.cc test_glob.cc
 test-obj:=$(patsubst %.cc, %.o, $(test-src))
 
 gtest-top:=$(top)test/googletest/googletest

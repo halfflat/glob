@@ -1,3 +1,4 @@
+#include <cstring>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -80,7 +81,7 @@ struct posix_impl {
     void for_each_directory(const char* path, glob_fs_provider::action_type action) const {
         for (const auto& p: fs::directory_iterator(path, diropts)) {
             std::error_code ec;
-            if (p.is_directory(&ec)) action(p.path().c_str());
+            if (fs::is_directory(p.path(), ec)) action(p.path().c_str());
         }
     }
 
@@ -95,7 +96,11 @@ struct posix_impl {
 glob_fs_provider glob_posix_provider{posix_impl_};
 
 void glob(const char* pattern, std::function<void (const char*)> callback, glob_fs_provider fs) {
-    char* c = pattern;
+    if (!*pattern) return;
+
+    std::vector<char> pcopy(1+std::strlen(pattern));
+    std::strcpy(pcopy.data(), pattern);
+    char* c = pcopy.data();
     if (!*c) return;
 
     std::vector<std::string> paths, new_paths;
@@ -118,10 +123,10 @@ void glob(const char* pattern, std::function<void (const char*)> callback, glob_
             }
         }
         else {
-            auto push_if_match = [&new_paths, const char* pattern = component.pattern](const char* x) {
-                const char* tail = std:strrchr(x, '/');
+            auto push_if_match = [&new_paths, pattern = component.pattern](const char* x) {
+                const char* tail = std::strrchr(x, '/');
                 if (!tail) tail = x;
-                if (nfa::match(.pattern, tail)) new_paths.push_back(x);
+                if (nfa::match(pattern, tail)) new_paths.push_back(x);
             };
 
             for (auto p: paths) {
