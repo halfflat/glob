@@ -38,10 +38,10 @@ struct glob_fs_provider {
         return inner->exists(path);
     }
     void for_each_directory(const char* path, action_type action) const {
-        return inner->for_each_directory(path, action);
+        inner->for_each_directory(path, action);
     }
     void for_each_entry(const char* path, action_type action) const {
-        return inner->for_each_entry(path, action);
+        inner->for_each_entry(path, action);
     }
 
 private:
@@ -63,10 +63,10 @@ private:
             return impl.exists(path);
         }
         void for_each_directory(const char* path, action_type action) const override {
-            return impl.for_each_directory(path, action);
+            impl.for_each_directory(path, action);
         }
         void for_each_entry(const char* path, action_type action) const override {
-            return impl.for_each_entry(path, action);
+            impl.for_each_entry(path, action);
         }
 
         Impl impl_;
