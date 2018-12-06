@@ -13,7 +13,17 @@ struct mock_fs_provider {
 
     std::unordered_multimap<std::string, std::string> tree;
 
-    void add_path(const char* name) {
+    mock_fs_provider() = default;
+
+    template <typename... Tail>
+    mock_fs_provider(const char* name, Tail... tail) {
+        add_path(name, tail...);
+    }
+
+    void add_path() const {}
+
+    template <typename... Tail>
+    void add_path(const char* name, Tail... tail) {
         if (!*name) return;
 
         const char* p = *name=='/'? name+1: name;
@@ -27,6 +37,8 @@ struct mock_fs_provider {
                 tree.insert({entry.second, std::string{}});
             }
         }
+
+        add_path(tail...);
     }
 
     static std::string canonical_key(const char* path) {
@@ -63,9 +75,23 @@ struct mock_fs_provider {
     }
 };
 
+template <typename... Tail>
+std::vector<std::string> glob_wrap(const char* pattern, const glob_fs_provider& fs) {
+    std::vector<std::string> results;
+    glob(pattern, [&results](const char* p) { results.push_back(p); }, fs);
+    std::sort(results.begin(), results.end());
+    return results;
 }
 
-TEST(glob, todo) {
 
+TEST(glob, simple) {
+    glob_fs_provider fs = mock_fs_provider{"fish", "fop", "barf", "barry", "tip"};
+
+    using svector = std::vector<std::string>;
+
+    EXPECT_EQ(svector({"fish", "fop"}), glob_wrap("f*", fs));
+    EXPECT_EQ(svector({"fop", "tip"}), glob_wrap("??p", fs));
+    EXPECT_EQ(svector(), glob_wrap("x*", fs));
 }
 
+} // namespace hf

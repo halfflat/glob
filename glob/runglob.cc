@@ -53,7 +53,7 @@ pattern_component tokenize(char*& pattern) {
     k.literal = (bool)s;
 
     if (!s) s = p;
-    k.directory = !*s;
+    k.directory = !!*s;
 
     pattern = s;
     while (*pattern=='/') ++pattern;
@@ -95,7 +95,7 @@ struct posix_impl {
 
 glob_fs_provider glob_posix_provider{posix_impl_};
 
-void glob(const char* pattern, std::function<void (const char*)> callback, glob_fs_provider fs) {
+void glob(const char* pattern, std::function<void (const char*)> callback, const glob_fs_provider& fs) {
     if (!*pattern) return;
 
     std::vector<char> pcopy(1+std::strlen(pattern));
@@ -144,4 +144,4 @@ void glob(const char* pattern, std::function<void (const char*)> callback, glob_
     }
 }
 
-}
+} // namespace hf

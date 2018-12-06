@@ -79,6 +79,6 @@ private:
 
 extern glob_fs_provider glob_posix_provider;
 
-void glob(const char* pattern, std::function<void (const char*)> callback, glob_fs_provider = glob_posix_provider);
+void glob(const char* pattern, std::function<void (const char*)> callback, const glob_fs_provider& = glob_posix_provider);
 
 } // namespace hf
