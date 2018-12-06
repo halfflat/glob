@@ -12,8 +12,8 @@ a `backtrack::match` and `nfa::match` implementation.
 that understands glob quirks (i.e. ? and * cannot match a period
 at the beginning of a filename component.)
 
-The main glob implementation has a callback interface for handling
-results, and takes a `glob_fs_provider` as an argument. This object
+The main glob implementation returns a vector of results (as `std::string`)
+and takes a `glob_fs_provider` as an argument. This object
 abstracts the needed file system queries, and is also used to
 provide a mock filesystem for unit testing.
 
