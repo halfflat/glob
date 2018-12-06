@@ -34,7 +34,10 @@ Current state:
 
 ## Dependencies
 
-The implementation of file system operations is based on the C++17
-standard library `std::filesystem` functionality, but the goal is
-to replace that with C++14 code and POSIX calls.
+Two different implementations of file system queries are provided:
+one uses the C++17 standard library `std::filesystem` and the other
+uses POSIX library functions directly.
+
+By default the POSIX implementation is used; add `with-std-filysystem=1`
+to the `make` invocation in order to use `std::filesystem` instead.
 

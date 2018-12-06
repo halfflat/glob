@@ -9,7 +9,8 @@ glob-src:=match.cc glob.cc
 
 ifdef with-std-filesystem
 CXXFLAGS+=-std=c++17
-CPPFLAGS+=-DHF_GLOB_USE_STD_FILESYSTEM=1
+LDLIBS+=-lstdc++fs
+glob.o: CPPFLAGS+=-DHF_GLOB_USE_STD_FILESYSTEM=1
 glob-src+=glob_std_fs_provider.cc
 else
 CXXFLAGS+=-std=c++14
@@ -28,7 +29,7 @@ gtest-top:=$(top)test/googletest/googletest
 gtest-inc:=$(gtest-top)/include
 gtest-src:=$(gtest-top)/src/gtest-all.cc
 
-depends:=gtest.d $(patsubst %.cc, %.d, $(glob-src) $(test-src))
+depends:=gtest.d $(patsubst %.cc, %.d, $(glob-src) $(glob-cli-src) $(test-src))
 
 vpath %.cc $(top)glob
 vpath %.cc $(top)src
@@ -38,7 +39,6 @@ vpath %.cc $(top)test
 OPTFLAGS?=-O3 -march=native
 CXXFLAGS+=$(OPTFLAGS) -MMD -MP -g -pthread
 CPPFLAGS+=-isystem $(gtest-inc) -I $(top)
-LDLIBS+=-lstdc++fs
 ARFLAGS+=-U
 
 
@@ -60,4 +60,4 @@ clean:
 	rm -f unit libglob.a $(glob-obj) $(test-obj) $(glob-cli-obj)
 
 realclean: clean
-	rm -f gtest.o $(depends)
+	rm -f glob gtest.o $(depends)
