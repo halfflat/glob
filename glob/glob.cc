@@ -6,6 +6,18 @@
 
 #include "glob.h"
 
+#ifdef HF_GLOB_USE_STD_FILESYSTEM
+#include "glob_std_fs_provider.h"
+namespace hf {
+glob_fs_provider glob_native_provider{glob_std_fs_impl{}};
+}
+#else
+#include "glob_posix_fs_provider.h"
+namespace hf {
+glob_fs_provider glob_native_provider{glob_posix_fs_impl{}};
+}
+#endif
+
 namespace hf {
 
 namespace {
@@ -159,40 +171,7 @@ pattern_component tokenize(char*& pattern) {
     return k;
 }
 
-// let's just use C++17 std::filesystem for now...
-
-namespace fs = std::filesystem;
-
-struct posix_impl {
-    static constexpr auto diropts = fs::directory_options::follow_directory_symlink
-                                  | fs::directory_options::skip_permission_denied;
-
-    bool is_directory(const char* path) const {
-        return fs::is_directory(*path? path: ".");
-    }
-
-    bool exists(const char* path) const {
-        return fs::exists(*path? path: ".");
-    }
-
-    void for_each_directory(const char* path, glob_fs_provider::action_type action) const {
-        for (const auto& p: fs::directory_iterator(*path? path: ".", diropts)) {
-            std::error_code ec;
-            if (fs::is_directory(p.path(), ec)) action(p.path().c_str());
-        }
-    }
-
-    void for_each_entry(const char* path, glob_fs_provider::action_type action) const {
-        for (const auto& p: fs::directory_iterator(*path? path: ".", diropts)) {
-            std::error_code ec;
-            action(p.path().c_str());
-        }
-    }
-} posix_impl_;
-
 } // end anonymous namespace
-
-glob_fs_provider glob_native_provider{posix_impl_};
 
 std::vector<std::string> glob(const char* pattern, const glob_fs_provider& fs) {
     if (!*pattern) return {};

@@ -6,6 +6,16 @@ top:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 all:: unit glob libglob.a
 
 glob-src:=match.cc glob.cc
+
+ifdef with-std-filesystem
+CXXFLAGS+=-std=c++17
+CPPFLAGS+=-DHF_GLOB_USE_STD_FILESYSTEM=1
+glob-src+=glob_std_fs_provider.cc
+else
+CXXFLAGS+=-std=c++14
+glob-src+=glob_posix_fs_provider.cc
+endif
+
 glob-obj:=$(patsubst %.cc, %.o, $(glob-src))
 
 test-src:=unit.cc test_match_backtrack.cc test_match_nfa.cc test_glob.cc
@@ -26,10 +36,11 @@ vpath %.cc $(top)match
 vpath %.cc $(top)test
 
 OPTFLAGS?=-O3 -march=native
-CXXFLAGS+=$(OPTFLAGS) -MMD -MP -std=c++17 -g -pthread
+CXXFLAGS+=$(OPTFLAGS) -MMD -MP -g -pthread
 CPPFLAGS+=-isystem $(gtest-inc) -I $(top)
 LDLIBS+=-lstdc++fs
 ARFLAGS+=-U
+
 
 -include $(depends)
 
