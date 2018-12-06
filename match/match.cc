@@ -19,8 +19,6 @@ using std::puts;
 
 namespace hf {
 
-namespace backtrack {
-
 bool match_char_class(const char*& p, char c) {
     // Special cases for first character:
     // ! => negate test defined from following char.
@@ -59,6 +57,8 @@ bool match_char_class(const char*& p, char c) {
 
     return match^negate;
 }
+
+namespace backtrack {
 
 bool match(const char* p, const char* t) {
     for (; ; ++p, ++t) {
@@ -101,6 +101,9 @@ bool match(const char* p, const char* t) {
                 continue;
             case '?':
                 if (c) goto advance;
+                else goto fail;
+            case '[':
+                if (c && match_char_class(*i, c)) goto advance;
                 else goto fail;
             case '\\':
                 ++*i; // fall-through

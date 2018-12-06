@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "glob/match.h"
+#include "match/match.h"
 
 // IMPLNAME has been defined to be the test
 // category and namespace with match implementation.

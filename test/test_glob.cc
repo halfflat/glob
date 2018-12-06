@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include "glob/runglob.h"
+#include "glob/glob.h"
 
 namespace hf {
 
@@ -75,23 +75,47 @@ struct mock_fs_provider {
     }
 };
 
-template <typename... Tail>
-std::vector<std::string> glob_wrap(const char* pattern, const glob_fs_provider& fs) {
-    std::vector<std::string> results;
-    glob(pattern, [&results](const char* p) { results.push_back(p); }, fs);
+std::vector<std::string> sort_glob(const char* pattern, const glob_fs_provider& fs) {
+    auto results = glob(pattern, fs);
     std::sort(results.begin(), results.end());
     return results;
 }
 
-
-TEST(glob, simple) {
+TEST(glob, simple_patterns) {
     glob_fs_provider fs = mock_fs_provider{"fish", "fop", "barf", "barry", "tip"};
 
     using svector = std::vector<std::string>;
 
-    EXPECT_EQ(svector({"fish", "fop"}), glob_wrap("f*", fs));
-    EXPECT_EQ(svector({"fop", "tip"}), glob_wrap("??p", fs));
-    EXPECT_EQ(svector(), glob_wrap("x*", fs));
+    EXPECT_EQ(svector({"fish", "fop"}), sort_glob("f*", fs));
+    EXPECT_EQ(svector({"fop", "tip"}), sort_glob("??p", fs));
+    EXPECT_EQ(svector(), sort_glob("x*", fs));
+}
+
+TEST(glob, literals) {
+    glob_fs_provider fs = mock_fs_provider{
+        "/abc/def/ghi",
+        "/abc/de",
+        "/xyz",
+        "pqrs/tuv/w",
+        "pqrs/tuv/wxy"
+    };
+
+    using svector = std::vector<std::string>;
+
+    EXPECT_EQ(svector({"/abc/def/ghi"}), sort_glob("/abc/def/ghi", fs));
+    EXPECT_EQ(svector({"/abc/def/ghi"}), sort_glob("/*/def/ghi", fs));
+    EXPECT_EQ(svector({"/abc/def/ghi"}), sort_glob("/*/*/ghi", fs));
+    EXPECT_EQ(svector({"/abc/def/ghi"}), sort_glob("/abc/def/*", fs));
+    EXPECT_EQ(svector({"/abc/def/ghi"}), sort_glob("/abc/*/*", fs));
+    EXPECT_EQ(svector({"pqrs/tuv/w", "pqrs/tuv/wxy"}), sort_glob("pqrs/tuv/w*", fs));
+    EXPECT_EQ(svector({"pqrs/tuv/w", "pqrs/tuv/wxy"}), sort_glob("*/tuv/w*", fs));
+    EXPECT_EQ(svector({"pqrs/tuv/w", "pqrs/tuv/wxy"}), sort_glob("pqrs/t*/w*", fs));
+}
+
+TEST(glob, multidir) {
+
+
+
 }
 
 } // namespace hf

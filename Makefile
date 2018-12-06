@@ -5,7 +5,7 @@ top:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
 all:: unit libglob.a
 
-glob-src:=match.cc runglob.cc
+glob-src:=match.cc glob.cc
 glob-obj:=$(patsubst %.cc, %.o, $(glob-src))
 
 test-src:=unit.cc test_match_backtrack.cc test_match_nfa.cc test_glob.cc
@@ -18,6 +18,7 @@ gtest-src:=$(gtest-top)/src/gtest-all.cc
 depends:=gtest.d $(patsubst %.cc, %.d, $(glob-src) $(test-src))
 
 vpath %.cc $(top)glob
+vpath %.cc $(top)match
 vpath %.cc $(top)test
 
 OPTFLAGS?=-O3 -march=native
