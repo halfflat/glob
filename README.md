@@ -17,6 +17,9 @@ results, and takes a `glob_fs_provider` as an argument. This object
 abstracts the needed file system queries, and is also used to
 provide a mock filesystem for unit testing.
 
+`src/` contains source for a command-line wrapper around the
+glob functionality.
+
 ## Supported features
 
 Current state:

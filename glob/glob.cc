@@ -168,22 +168,22 @@ struct posix_impl {
                                   | fs::directory_options::skip_permission_denied;
 
     bool is_directory(const char* path) const {
-        return fs::is_directory(path);
+        return fs::is_directory(*path? path: ".");
     }
 
     bool exists(const char* path) const {
-        return fs::exists(path);
+        return fs::exists(*path? path: ".");
     }
 
     void for_each_directory(const char* path, glob_fs_provider::action_type action) const {
-        for (const auto& p: fs::directory_iterator(path, diropts)) {
+        for (const auto& p: fs::directory_iterator(*path? path: ".", diropts)) {
             std::error_code ec;
             if (fs::is_directory(p.path(), ec)) action(p.path().c_str());
         }
     }
 
     void for_each_entry(const char* path, glob_fs_provider::action_type action) const {
-        for (const auto& p: fs::directory_iterator(path, diropts)) {
+        for (const auto& p: fs::directory_iterator(*path? path: ".", diropts)) {
             std::error_code ec;
             action(p.path().c_str());
         }
