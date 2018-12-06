@@ -49,25 +49,32 @@ bool match_char_class(const char*& p, char c) {
     return match^negate;
 }
 
-// TODO: exclude initial '.' from * and ? match.
+// Special exception for filename globbing:
+// an initial period '.' can only be matched
+// by an intial '.' in the pattern.
+
 bool glob_match(const char* p, const char* t) {
     std::list<const char*> state = {p};
 
     char c;
+    bool initial_dot = *t=='.';
     do {
         c = *t++;
         for (auto i = state.begin(); i!=state.end();) {
             switch (**i) {
             case '*':
+                if (initial_dot) goto fail;
                 if (i==state.begin() || *std::prev(i)!=*i) {
                     state.insert(i, *i);
                 }
                 while (**i=='*') ++*i;
                 continue;
             case '?':
+                if (initial_dot) goto fail;
                 if (c) goto advance;
                 else goto fail;
             case '[':
+                if (initial_dot) goto fail;
                 if (c && match_char_class(*i, c)) goto advance;
                 else goto fail;
             case '\\':
@@ -86,6 +93,7 @@ bool glob_match(const char* p, const char* t) {
             ++i;
             continue;
         }
+        initial_dot = false;
     } while (c && !state.empty());
 
     return !state.empty() && !*state.back();

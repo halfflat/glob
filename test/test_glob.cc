@@ -113,9 +113,38 @@ TEST(glob, literals) {
 }
 
 TEST(glob, multidir) {
+    glob_fs_provider fs = mock_fs_provider{
+        "abc/fab/x",
+        "abc/fab/yz",
+        "abc/flib/x",
+        "abc/flib/yz",
+        "abc/rib/x",
+        "def/rib/yz",
+        "def/fab/x",
+        "def/fab/yz",
+        "def/rib/x",
+        "def/rib/yz"
+    };
 
+    using svector = std::vector<std::string>;
 
+    EXPECT_EQ(svector({"abc/fab/x", "abc/flib/x"}), sort_glob("*c/f*b/?", fs));
+}
 
+TEST(glob, dots) {
+    glob_fs_provider fs = mock_fs_provider{
+        "f.oo/b.ar", "f.oo/.bar",
+        ".foo/b.ar", ".foo/.bar"
+    };
+
+    using svector = std::vector<std::string>;
+
+    EXPECT_EQ(svector({"f.oo/b.ar"}), sort_glob("*/*", fs));
+    EXPECT_EQ(svector({".foo/b.ar"}), sort_glob(".*/*", fs));
+    EXPECT_EQ(svector({"f.oo/b.ar"}), sort_glob("f[.z]oo/*", fs));
+    EXPECT_EQ(svector({"f.oo/b.ar"}), sort_glob("f?oo/*", fs));
+    EXPECT_EQ(svector(), sort_glob("[.z]foo/*", fs));
+    EXPECT_EQ(svector(), sort_glob("?foo/*", fs));
 }
 
 } // namespace hf
